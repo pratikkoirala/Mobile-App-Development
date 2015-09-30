@@ -55,6 +55,31 @@ angular.module('app', ['ionic'])
                         return response.data;
                     });
 
+            },
+
+            addObject: function (_params) {
+
+                // for POST, we only need to set the authentication header
+                var settings = {
+                    headers: authenticationHeaders,
+                };
+                // for POST, we need to specify data to add, AND convert it to
+                // a string before passing it in as seperate parameter data
+                var dataObject = {
+                    "name": _params.name,
+                    "room": _params.room,
+                };
+
+                var dataObjectString = JSON.stringify(dataObject);
+
+                // $http returns a promise, which has a then function
+                return $http.post(baseURL + 'classes/stuff', dataObjectString, settings)
+                    .then(function (response) {
+                        // In the response resp.data contains the result
+                        // check the console to see all of the data returned
+                        console.log('addObject', response);
+                        return response.data;
+                    });
             }
         }
     })
@@ -75,6 +100,39 @@ angular.module('app', ['ionic'])
         }).then(function (_data) {
             $scope.apiResponseData = _data.results;
         }, function error(_error) {
-console.log(_error);
+            console.log(_error);
         });
-    });
+        $scope.inputItem = {
+            value: "",
+            name: "",
+            room: ""
+        };
+
+        $scope.addItem = function addItem() {
+
+            // separate the values you get from the ng-model
+            // on the input field
+            var data = $scope.inputItem.value.split(",");
+
+            if (data.length === 2) {
+                $scope.inputItem.name = data[0].trim();
+                $scope.inputItem.room = data[1].trim();
+
+                ParseHttpService.addObject($scope.inputItem)
+                    .then(function itemSaved(_newItem) {
+                        alert("Item Saved", _newItem.objectId);
+                        $scope.inputItem = {};
+
+                        return populateList();
+
+                    }, function errorSaving(_error) {
+                        $scope.inputItem = {};
+                    });
+            } else {
+                alert("Invalid Input: " + $scope.inputItem.value);
+                $scope.inputItem = {};
+            }
+        };
+
+    }
+);
