@@ -11,6 +11,7 @@
 <body ng-app="app"
       ng-controller="firstOne">  <!-- Angular instantiates a new Controller object -->
 <ion-pane>
+
     <ion-header-bar class="bar-stable">
         <h1 class="title">Awesome App</h1>
     </ion-header-bar>
@@ -19,10 +20,24 @@
         <!-- <button class="button button-assertive">I'm a button</button>
 
              {{ Hello }} -->
+
+
         <ion-list>
-            <ion-item ng-repeat="item in apiResponseData track by $index">
-                {{$index}} {{item.name}} {{item.room}}
+            <ion-item class="item-divider">My Parse Data</ion-item>
+            <ion-item ng-repeat="item in apiResponseData track by item.objectId" ng-href="#/detail/">
+                {{item.name}} {{item.room}}
+                <div>{{item.objectId}}</div>
+                <div class="text-right">
+                    <button class="ion-edit button"
+                            ng-click="editObject(item)">
+                    </button>
+                    <button class="ion-minus-circled button"
+                            ng-click="deleteObject(item.objectId)">
+                    </button>
+                </div>
             </ion-item>
+
+
         </ion-list>
         <item class="item-input">
             <label class="item-input-wrapper">
@@ -32,6 +47,9 @@
             <button class="button button-clear" ng-click="addItem()">ADD
             </button>
         </item>
+
+
+
 
     </ion-content>
 
