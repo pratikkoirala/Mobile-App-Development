@@ -61,7 +61,7 @@ angular.module('app', ['ionic'])
 
                 // for POST, we only need to set the authentication header
                 var settings = {
-                    headers: authenticationHeaders,
+                    headers: authenticationHeaders
                 };
                 // for POST, we need to specify data to add, AND convert it to
                 // a string before passing it in as seperate parameter data
@@ -78,6 +78,50 @@ angular.module('app', ['ionic'])
                         // In the response resp.data contains the result
                         // check the console to see all of the data returned
                         console.log('addObject', response);
+                        return response.data;
+                    });
+            },
+            updateObject: function (_params) {
+
+                // for POST, we only need to set the authentication header
+                var settings = {
+                    headers: authenticationHeaders
+                };
+                // for POST, we need to specify data to add, AND convert it to
+                // a string before passing it in as seperate parameter data
+
+                var dataObject = {
+                    "name": (_params.name ? _params.name : JSON.null),
+                    "room": (_params.room ? _params.room : JSON.null)
+                };
+
+                var dataObjectString = JSON.stringify(dataObject);
+
+                var apiUrl = baseURL + 'classes/stuff/' + _params.objectId;
+
+                // $http returns a promise, which has a then function,
+                // which also returns a promise
+                return $http.put(apiUrl, dataObjectString, settings)
+                    .then(function (response) {
+                        // In the response resp.data contains the result
+                        // check the console to see all of the data returned
+                        console.log('updateObject', response);
+                        return response.data;
+                    });
+            },
+            deleteObjectById: function (_id) {
+
+                var settings = {
+                    headers: authenticationHeaders
+                };
+
+                // $http returns a promise, which has a then function,
+                // which also returns a promise
+                return $http.delete(baseURL + 'classes/stuff/' + _id, settings)
+                    .then(function (response) {
+                        // In the response resp.data contains the result
+                        // check the console to see all of the data returned
+                        console.log('deleteObjectById', response);
                         return response.data;
                     });
             }
@@ -123,7 +167,7 @@ angular.module('app', ['ionic'])
                         alert("Item Saved", _newItem.objectId);
                         $scope.inputItem = {};
 
-                        return populateList();
+                        return ParseHttpService.getStuff();
 
                     }, function errorSaving(_error) {
                         $scope.inputItem = {};
@@ -134,5 +178,84 @@ angular.module('app', ['ionic'])
             }
         };
 
+        $scope.editObject = function editObject(_object) {
+
+            var data = null;
+            var editedObject = {};
+            var objectData = prompt("Enter the Edited Information", _object.name + ", " + _object.room);
+
+            // check if the user entered some data
+            if (objectData !== null) {
+                // separate the values
+                data = objectData.split(",");
+            }
+
+            // check if the user entered some data and if i got two items
+            // back when I split the data for name and room value
+            if (objectData && (data.length === 2)) {
+
+                // create object parameters to save
+                editedObject.name = data[0].trim();
+                editedObject.room = data[1].trim();
+                editedObject.objectId = _object.objectId;
+
+                console.log(JSON.stringify(editedObject));
+
+                ParseHttpService.updateObject(editedObject)
+                    .then(function itemUpdated(_updatedItem) {
+                        alert("Item Updated " + _updatedItem.objectId);
+
+                        return ParseHttpService.getStuff();
+
+                    }, function errorSaving(_error) {
+                        alert("Error Editing Object " + _error)
+                    });
+            } else {
+                if (objectData !== null) {
+                    alert("Invalid Input: " + objectData);
+                }
+            }
+        };
+        $scope.deleteObject = function editObject(_objectId) {
+            ParseHttpService.deleteObjectById(_objectId)
+                .then(function itemSaved(_deletedObject) {
+                    alert("Item Deleted " + _deletedObject.objectId);
+
+                    return ParseHttpService.getStuff();
+
+                }, function errorDeleting(_error) {
+                    alert("Error Deleting Object " + _objectId)
+                });
+        };
     }
-);
+)
+    .config(function ($stateProvider, $urlRouterProvider) {
+
+        $urlRouterProvider.otherwise("/home");
+        // Now set up the states
+        $stateProvider
+            .state('home', {
+                url: "/home",
+                templateUrl: "views/home.html",
+                controller: "homeCtrl"
+            })
+            .state('detail', {
+                url: "/detail/:objectId",
+                templateUrl: "views/detail.html",
+                controller: "detailCtrl"
+            });
+    })
+    .controller('homeCtrl', function ($scope, $state, ParseHttpService) {
+        $scope.stateInfo = $state.current;
+
+    })
+    .controller('detailCtrl', function ($scope, $state, ParseHttpService) {
+        $scope.stateInfo = $state.current;
+        $scope.params = $state.params;
+        ParseService.getObjectById($state.params.objectId).then(function(_data){
+            console.log(_data);
+            $scope.item = _data;
+        }, function (_error) {
+            alert("Error". _error.message);
+        });
+    })
